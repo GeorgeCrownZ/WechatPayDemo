@@ -1,0 +1,19 @@
+server:
+  port: 8080
+spring:
+  thymeleaf:
+    prefix: classpath:/templates/
+    mode: HTML
+    cache: false
+    encoding: UTF-8
+    #     新版本不支持content-type: text/html，故新写法
+    servlet:
+      content-type: text/html
+  application:
+    name: web
+  datasource:
+    url: jdbc:mysql://117.51.145.75:3306/fengzhu?serverTimezone=GMT%2B8&useSSL=true
+    username: root
+    password: root
+mybatis-plus:
+  type-aliases-package:  com.example.demo

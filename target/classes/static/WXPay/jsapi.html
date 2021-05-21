@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jsapi</title>
+</head>
+<body>
+<button onclick="pay()">付款</button>
+<script crossorigin="anonymous" integrity="sha512-n/4gHW3atM3QqRcbCn6ewmpxcLAHGaDjpEBu4xZd47N0W2oQ+6q7oc3PXstrJYXcbNU1OHdQ1T7pAP+gi5Yu8g==" src="https://lib.baomitu.com/jquery/3.6.0/jquery.js"></script>
+
+<script>
+
+
+    function getUrlParam(name) {
+        var reg = new RegExp("(^|&?)" + name + "=([^&]*)(&|$)"); // 构造一个含有目标参数的正则表达式对象
+        var r = location.href.substr(1).match(reg);  // 匹配目标参数
+        if (r != null) return unescape(r[2]);
+        return null; // 返回参数值
+    }
+
+    window.onload = function () {
+
+        let domain = "https://cs.fzsir.com/";
+
+        let order = new Date().getTime();//订单号
+        let appId, timeStamp, nonceStr, package, signType, paySign;
+        let clickState = 0;
+
+        pay = function () {
+            if (clickState != 0) {
+                inputPass();
+                return;
+            }
+            let code = (getUrlParam("code"));
+            alert("code==============>"+code);
+            $.ajax({
+                url: domain+"test/wechat/pay",//调取后端接口
+                type: "get",
+                data: {
+                    orderNo: order,
+                    code: code
+                },
+                dataType: "json",
+                success: function (result) {
+                    alert(JSON.stringify(result));
+                    appId = result.data.appId;
+                    timeStamp = result.data.timeStamp;
+                    nonceStr = result.data.nonceStr;
+                    package = result.data.package;
+                    signType = result.data.signType;
+                    paySign = result.data.paySign;
+                    clickState = 1;
+                    inputPass();
+                },
+                error: function (r) {
+                    alert(JSON.stringify(r));
+                }
+            })
+        }
+
+        inputPass = function (message) {//输入密码
+            alert("进入：inputPass()")
+            if (typeof WeixinJSBridge == "undefined") {
+                if (document.addEventListener) {
+                    document.addEventListener('WeixinJSBridgeReady', onBridgeReady, false);
+                } else if (document.attachEvent) {
+                    document.attachEvent('WeixinJSBridgeReady', onBridgeReady);
+                    document.attachEvent('onWeixinJSBridgeReady', onBridgeReady);
+                }
+            } else {
+                onBridgeReady();
+            }
+
+            function onBridgeReady() {
+                alert("进入：onBridgeReady()");
+                WeixinJSBridge.invoke('getBrandWCPayRequest', {
+                        "appId": appId,     //公众号名称,由商户传入
+                        "timeStamp": timeStamp,         //时间戳,自1970年以来的秒数
+                        "nonceStr": nonceStr, //随机串
+                        "package": package,
+                        "signType": signType,         //微信签名方式：
+                        "paySign": paySign //微信签名
+                    },
+                    function (res) {
+                        if (res.err_msg == "get_brand_wcpay_request:ok") {
+                            console.log('支付成功');
+                            alert("支付成功")
+                            //window.location.href=
+                            //支付成功后跳转的页面
+                        } else if (res.err_msg == "get_brand_wcpay_request:cancel") {
+                            confirm("确定要取消支付吗", function () {
+                                clickState = 1;
+                                alert("已取消支付");
+                                WeixinJSBridge.call('closeWindow');
+                            })
+
+                            //WeixinJSBridge.call('closeWindow');
+                        } else if (res.err_msg == "get_brand_wcpay_request:fail") {
+                            console.log('支付失败');
+                            alert("支付失败")
+                            WeixinJSBridge.call('closeWindow');
+                        } //使用以上方式判断前端返回,微信团队郑重提示：res.err_msg将在用户支付成功后返回ok,但并不保证它绝对可靠。
+
+                    })
+            }
+        }
+    }
+</script>
+</body>
+</html>
